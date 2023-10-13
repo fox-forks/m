@@ -86,8 +86,8 @@ abort_not_installed() {
 #
 
 file_age_in_seconds() {
-  local FILE_TIME=`date -r "$1" +%s`;
-  local TIME_NOW=`date +%s`;
+  local FILE_TIME=$(date -r "$1" +%s);
+  local TIME_NOW=$(date +%s);
   echo "$[ ${TIME_NOW} - ${FILE_TIME} ]";
 }
 
@@ -201,14 +201,14 @@ get_all_versions() {
           debug "$CACHE_SRC is $(file_age_in_seconds $CACHE_SRC) seconds old (expiry: $CACHE_EXPIRY)"
           if [ $(file_age_in_seconds $CACHE_SRC) -lt $CACHE_EXPIRY ]; then
             debug "Using cache: $CACHE_SRC"
-            all_versions=`cat $CACHE_SRC`
+            all_versions=$(cat $CACHE_SRC)
           fi
         fi
     fi
 
     if [ -z "$all_versions" ]; then
       debug "get_all_versions(): $GET $src_url"
-      all_versions=`$GET 2> /dev/null $src_url`
+      all_versions=$($GET 2> /dev/null $src_url)
       if [ $CACHE ]; then
         debug "Creating cache: $CACHE_SRC"
         echo "$all_versions" > $CACHE_SRC
@@ -223,8 +223,8 @@ get_all_versions() {
 check_current_version() {
   which mongo &> /dev/null
   if test $? -eq 0; then
-    active=`mongod --version | grep "version\s*v[0-9]" | grep -E -o '[0-9]+\.[0-9]+\.[0-9]+([-_\.][a-zA-Z0-9]+)?' | head -1`
-    ent=`mongod --version | grep -E "(modules:\s*)|\"enterprise\"?" | wc -l`
+    active=$(mongod --version | grep "version\s*v[0-9]" | grep -E -o '[0-9]+\.[0-9]+\.[0-9]+([-_\.][a-zA-Z0-9]+)?' | head -1)
+    ent=$(mongod --version | grep -E "(modules:\s*)|\"enterprise\"?" | wc -l)
     if [[ $ent == *1 ]]; then
       active="$active-ent"
     fi
@@ -241,7 +241,7 @@ display_versions() {
   local json=false
 
   declare -a versions
-  versions=(`ls -1 $VERSIONS_DIR | sort -t. -k 1,1n -k 2,2n -k 3,3n`)
+  versions=($(ls -1 $VERSIONS_DIR | sort -t. -k 1,1n -k 2,2n -k 3,3n))
   if test -z "$versions"; then
     echo No installed versions
     return
@@ -256,7 +256,7 @@ display_versions() {
   check_current_version
   for version in ${versions[@]}; do
     local dir="$VERSIONS_DIR/$version"
-    local config=`test -f "$dir"/.config && cat "$dir"/.config`
+    local config=$(test -f "$dir"/.config && cat "$dir"/.config)
 
     if $json; then
       printf "\n  {\n    \"name\" : \"$version\",\n    \"path\" : \"$dir/bin/\" \n  }"
@@ -303,10 +303,10 @@ install_tools() {
   
   if [[ $version == "stable" ]]; then
     # Set version to the latest available version
-    version=`echo $versions | awk 'NF>1{print $NF}'`
+    version=$(echo $versions | awk 'NF>1{print $NF}')
   fi
 
-  version_test=`echo $version | sed 's/-ent$//'`
+  version_test=$(echo $version | sed 's/-ent$//')
   if [[ ! $versions =~ $version_test ]]; then
     printf "Could not find any releases for the requested version "$version" of Database Tools\n"
     exit 1;
@@ -418,7 +418,7 @@ check_current_tools_version() {
   which mongodump &> /dev/null
   if test $? -eq 0; then
     # Note: this regex only works for mongodump 3.0+
-    active_tools=`mongodump --version | sed -nE "s/mongodump version\: r?(.*)$/\1/p"`
+    active_tools=$(mongodump --version | sed -nE "s/mongodump version\: r?(.*)$/\1/p")
   fi
 }
 
@@ -435,20 +435,20 @@ get_all_tools_versions() {
     local rc_regex="(-rc[0-9]+)?"
   fi
 
-  tools_versions=`curl -s \
+  tools_versions=$(curl -s \
   -H "Accept: application/vnd.github.v3+json" \
   https://api.github.com/repos/mongodb/mongo-tools/git/refs/tags \
   | sed -nE "s/^.*\"ref\"\: \"refs\/tags\/r?([[:digit:]]{2,3}\.[[:digit:]]+\.[[:digit:]]+)\",$/\1/p" \
-  | sort -V`
+  | sort -V)
 
   get_all_versions
 
-  server_versions=`echo $all_versions \
+  server_versions=$(echo $all_versions \
     | grep -E -o "$tools_regex$rc_regex" \
     | sort -u \
     | sort -s -k 2.3n -t - \
     | sort -s -k 1,1n -k 2,2n -k 3,3n -t . \
-    | awk '{ if ($1 ) { print "  " $1 } }'`
+    | awk '{ if ($1 ) { print "  " $1 } }')
 
   versions="$server_versions $tools_versions"
 }
@@ -484,7 +484,7 @@ list_tools_versions() {
 #
 
 verlte() {
-    [  "$1" = "`echo -e "$1\n$2" | sort -V | head -n1`" ]
+    [  "$1" = "$(echo -e "$1\n$2" | sort -V | head -n1)" ]
 }
 
 #
@@ -492,7 +492,7 @@ verlte() {
 #
 
 vergte() {
-    [  "$1" = "`echo -e "$1\n$2" | sort -rV | head -n1`" ]
+    [  "$1" = "$(echo -e "$1\n$2" | sort -rV | head -n1)" ]
 }
 
 #
@@ -514,7 +514,7 @@ display_tools_versions() {
 
   declare -a versions
   if [ -e $TOOLS_DIR ]; then
-    versions=(`(ls -1 $VERSIONS_DIR; ls -1 $TOOLS_DIR) | sort -t. -k 1,1n -k 2,2n -k 3,3n`)
+    versions=($((ls -1 $VERSIONS_DIR; ls -1 $TOOLS_DIR) | sort -t. -k 1,1n -k 2,2n -k 3,3n))
   fi
 
   if test -z "$versions"; then
@@ -535,7 +535,7 @@ display_tools_versions() {
       continue
     fi
     local dir="$TOOLS_DIR/$version"
-    local config=`test -f "$dir"/.config && cat "$dir"/.config`
+    local config=$(test -f "$dir"/.config && cat "$dir"/.config)
     if $json; then
       printf "\n  {\n    \"name\" : \"$version\",\n    \"path\" : \"$dir/bin/\" \n  }"
       if [ "$version" != "$last" ]; then
@@ -606,20 +606,20 @@ install_mongo() {
 
     if test "$flavour" = "latest"; then
       debug "grep -E -o \"$series\.[0-9]+$rc\""
-      version=`echo $all_versions \
+      version=$(echo $all_versions \
         | grep '"version\":' \
         | grep -E -o "$series\.[0-9]+$rc" \
         | sort -u -k 1,1n -k 2,2n -k 3,3n -t . \
-        | tail -n1`
+        | tail -n1)
     else
       debug "grep -E -v \"[-]rc\" | grep -E -o \"$series\.[0-9]+\" "
 
-      version=`echo $all_versions \
+      version=$(echo $all_versions \
         | grep '"version\":' \
         | grep -E -o "$series\.[0-9]+\.zip" \
         | sed s/.zip$// \
         | sort -u -k 1,1n -k 2,2n -k 3,3n -t . \
-        | tail -n1`
+        | tail -n1)
     fi
     version="$version$ent"
   fi
@@ -813,9 +813,9 @@ install_bin() {
 #
 
 get_distro_and_arch() {
-  arch=`uname -m`
-  local OS=`uname`
-  os=`echo $OS | tr '[:upper:]' '[:lower:]'`
+  arch=$(uname -m)
+  local OS=$(uname)
+  os=$(echo $OS | tr '[:upper:]' '[:lower:]')
 
   case $os in
     linux* )
@@ -859,8 +859,8 @@ get_distro_and_arch() {
   local distro_id= distro_version=
   if lsb_release >/dev/null 2>&1; then
     # If the lsb_release(1) tool is installed, use it.
-    distro_id=`lsb_release -si`
-    distro_version=`lsb_release -sr`
+    distro_id=$(lsb_release -si)
+    distro_version=$(lsb_release -sr)
     if test "$distro_version" = testing; then
       distro_version=
     fi
@@ -872,7 +872,7 @@ get_distro_and_arch() {
       distro_version=$(sed -ne 's/^DISTRIB_RELEASE=//p' /etc/lsb-release | sed -e 's/^["'"'"']//' -e 's/["'"'"']$//' -e 's/\\\(.\)/\1/g')
     elif test -f /etc/debian_version; then
       # Debian generally doesn't install lsb_release(1) or a /etc/lsb-release file, so we figure it out manually.
-      distro_version=`cat /etc/debian_version`
+      distro_version=$(cat /etc/debian_version)
       case "$distro_version" in
         etch|etch/*)
           distro_version=4 ;;
@@ -901,8 +901,8 @@ get_distro_and_arch() {
     fi
   fi
 
-  distro_id=`echo "$distro_id" | tr '[:upper:]' '[:lower:]'`
-  distro_version=`echo "$distro_version" | tr '[:upper:]' '[:lower:]'`
+  distro_id=$(echo "$distro_id" | tr '[:upper:]' '[:lower:]')
+  distro_version=$(echo "$distro_version" | tr '[:upper:]' '[:lower:]')
   case "$distro_id" in
     sles) distro_id="suse" ;;
     opensuse) distro_id="suse" ;;
@@ -1031,7 +1031,7 @@ download() {
   local url=$2
   local builddir=$3
 
-  local logpath=`mktemp /tmp/m.XXXXXX` || exit 1
+  local logpath=$(mktemp /tmp/m.XXXXXX) || exit 1
 
   # create build directory
   mkdir -p $builddir
@@ -1135,20 +1135,20 @@ get_latest_installed_version() {
 
   case $version in
     latest)
-      version=`$0 --latest`
+      version=$($0 --latest)
       ;;
     stable)
-      version=`$0 --stable`
+      version=$($0 --stable)
       ;;
   esac
 
   if [[ $version =~ ^([0-9)]\.([0-9]+)(-ent)?$ ]]; then
     local series="${BASH_REMATCH[1]}\.${BASH_REMATCH[2]}"
     local ent="${BASH_REMATCH[3]}"
-    version=`find ${VERSIONS_DIR} -mindepth 1 -maxdepth 1 -type d \
+    version=$(find ${VERSIONS_DIR} -mindepth 1 -maxdepth 1 -type d \
       | grep -E -o "$series\.[0-9]+([-_\.]rc[0-9]+)?" \
       | sort -u -k 1,1n -k 2,2n -k 3,3n -t . \
-      | tail -n1`
+      | tail -n1)
     if [[ -z "$version" ]]; then
       echo ""
     else
@@ -1319,12 +1319,12 @@ list_versions() {
 
   get_all_versions
 
-  versions=`echo $all_versions \
+  versions=$(echo $all_versions \
     | grep -E -o "$series\.[0-9]+$rc" \
     | sort -u \
     | sort -s -k 2.3n -t - \
     | sort -s -k 1,1n -k 2,2n -k 3,3n -t . \
-    | awk '{ print "  " $1 }'`
+    | awk '{ print "  " $1 }')
 
   if [[ -z "$versions" ]]; then
       abort "Could not find any releases for the requested version\n"
@@ -1514,8 +1514,8 @@ else
       sd|shard|mongos) shift; execute_shard_with_version $@; exit ;;
       s|sh|shell|mongo) shift; execute_shell_with_version $@; exit ;;
       rm) shift; remove_versions $@; exit ;;
-      latest) install_mongo `$0 --latest`; exit ;;
-      stable) install_mongo `$0 --stable`; exit ;;
+      latest) install_mongo $($0 --latest); exit ;;
+      stable) install_mongo $($0 --stable); exit ;;
       ls|list|available|avail) shift; list_versions $@; exit ;;
       pre) shift; install_hook pre $@; exit ;;
       post) shift; install_hook post $@; exit ;;
